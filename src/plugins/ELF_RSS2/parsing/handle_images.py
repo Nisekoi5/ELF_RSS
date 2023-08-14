@@ -14,6 +14,7 @@ from yarl import URL
 from ..config import Path, config
 from ..rss_class import Rss
 from .utils import get_proxy, get_summary
+from ..globals import state
 
 
 # 通过 ezgif 压缩 GIF
@@ -276,15 +277,30 @@ def file_name_format(file_url: URL, rss: Rss) -> Tuple[Path, str]:
     """
     format_rule = config.img_format or ""
     down_path = config.img_down_path or ""
+    is_create_folder: bool = config.create_folder or False
+    folder_format_rule = config.folder_format or ""
     rules = {  # 替换格式化字符串
         "{subs}": rss.name,
+        "{title}": state.item["title"] if state.item else "[标题获取失败]",
+        "{id}": state.id,
+        "{sn}": str(state.sn),
         "{name}": file_url.name
         if "{ext}" not in format_rule
         else Path(file_url.name).stem,
         "{ext}": file_url.suffix if "{ext}" in format_rule else "",
     }
     for k, v in rules.items():
+        # 对文件夹名和图片名进行替换
         format_rule = format_rule.replace(k, v)
+        folder_format_rule = folder_format_rule.replace(k, v)
+
+    if is_create_folder and state.img_num > 1 and (folder_format_rule != ""):
+        # 如果本次新内容需保存的图片数量多于一张,且开启了创建新文件夹就会新增一个文件夹放到里面去
+        format_rule = Path(format_rule)
+        file_name = format_rule.name  # 保存的图片文件名
+        folder_path = format_rule.parent  # 文件夹名(如果用户设置了的话)
+        format_rule = folder_path / folder_format_rule / file_name  # type: ignore
+
     if down_path == "":  # 如果没设置保存路径的话,就保存到默认目录下
         save_path = Path().cwd() / "data" / "image"
     elif down_path[0] == ".":

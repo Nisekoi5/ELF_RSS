@@ -10,17 +10,22 @@ from nonebot.log import logger
 from . import rss_parsing
 from .rss_class import Rss
 from .utils import scheduler
+from .globals import RequestContext
 
 
 # 检测某个rss更新
 async def check_update(rss: Rss) -> None:
     logger.info(f"{rss.name} 检查更新")
+    ctx = RequestContext(rss=rss)
+    ctx.push()
     try:
         wait_for = 5 * 60 if re.search(r"[_*/,-]", rss.time) else int(rss.time) * 60
         async with timeout(wait_for):
             await rss_parsing.start(rss)
     except asyncio.TimeoutError:
         logger.error(f"{rss.name} 检查更新超时，结束此次任务!")
+    finally:
+        ctx.pop()
 
 
 def delete_job(rss: Rss) -> None:

@@ -1,12 +1,17 @@
 import re
 from inspect import signature
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple, TYPE_CHECKING, cast
 
 from tinydb import TinyDB
+from nonebot.log import logger
 
 from ..config import DATA_PATH
 from ..rss_class import Rss
 from ..utils import partition_list
+from ..globals import current_rss, state as ctx_state
+
+if TYPE_CHECKING:
+    from ..typings.t_globals import Item
 
 
 # 订阅器启动的时候将解析器注册到rss实例类？，避免每次推送时再匹配
@@ -213,9 +218,11 @@ class ParsingRss:
                 "items": [],
             }
         )
+        ctx_state.item_num = len(self.state["change_data"])
         if change_data := self.state["change_data"]:
             for parted_item_list in partition_list(change_data, 10):
                 for item in parted_item_list:
+                    ctx_state.item = cast("Item", item)
                     item_msg = ""
                     for handler_list in self.handler.values():
                         # 用于保存上一次处理结果
