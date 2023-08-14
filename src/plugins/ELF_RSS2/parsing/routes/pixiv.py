@@ -7,10 +7,11 @@ from nonebot.log import logger
 from pyquery import PyQuery as Pq
 from tenacity import RetryError, TryAgain, retry, stop_after_attempt, stop_after_delay
 
-from ...config import DATA_PATH
+from ...config import DATA_PATH, config
 from ...rss_class import Rss
 from .. import ParsingBase, cache_db_manage, duplicate_exists, write_item
 from ..handle_images import (
+    fuck_pixiv_cat,
     get_preview_gif_from_video,
     handle_img_combo,
     handle_img_combo_with_content,
@@ -119,6 +120,8 @@ async def handle_img(
             doc_img = doc_img[:img_num]
         for img in doc_img:
             url = img.attr("src")
+            if config.close_pixiv_cat:
+                url = await fuck_pixiv_cat(url)
             img_str += await handle_img_combo(url, img_proxy, rss)
 
     return img_str

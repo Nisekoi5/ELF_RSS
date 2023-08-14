@@ -27,6 +27,7 @@ class ELFConfig(BaseConfig):
     gif_zip_size: int = 6 * 1024
     img_format: Optional[str] = None
     img_down_path: Optional[str] = None
+    close_pixiv_cat: bool = False
 
     blockquote: bool = True
     black_word: Optional[List[str]] = None
